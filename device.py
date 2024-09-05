@@ -1,16 +1,27 @@
-import time
+import paho.mqtt.client as mqtt
+import json
 import random
-import requests
+import time
 
-SERVER_URL = 'http://localhost:5000/data'
+MQTT_BROKER = "localhost"
+MQTT_PORT = 1883
+MQTT_TOPIC = "temperature/data"
 
-def send_data():
-    while True:
-        temperature = random.uniform(15.0, 25.0)  # Simulate temperature data
-        data = {'temperature': temperature}
-        response = requests.post(SERVER_URL, json=data)
-        print(f"Sent data: {data}, Response: {response.status_code}")
-        time.sleep(5)  # Send data every 5 seconds
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print("Connected to MQTT Broker!")
+    else:
+        print(f"Failed to connect, return code {rc}")
 
-if __name__ == '__main__':
-    send_data()
+client = mqtt.Client()
+
+client.on_connect = on_connect
+
+client.connect(MQTT_BROKER, MQTT_PORT, 60)
+client.loop_start()
+
+while True:
+    data = {"temperature": round(random.uniform(15.0, 25.0), 2)}
+    result = client.publish(MQTT_TOPIC, json.dumps(data))
+    print(f"Sent data: {data}, Response: {result.rc}")
+    time.sleep(5)
